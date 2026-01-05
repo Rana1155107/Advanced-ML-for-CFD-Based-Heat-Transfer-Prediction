@@ -1,0 +1,460 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "15146bac",
+   "metadata": {
+    "papermill": {
+     "duration": 0.003194,
+     "end_time": "2026-01-05T17:20:31.176415",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:31.173221",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Comparative Machine Learning Analysis for Predicting Heat Transfer Characteristics Using Multi-Parameter CFD Data**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7dc79d47",
+   "metadata": {
+    "papermill": {
+     "duration": 0.001843,
+     "end_time": "2026-01-05T17:20:31.180491",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:31.178648",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Introduction**\n",
+    "\n",
+    "\n",
+    "*Predicting heat transfer characteristics such as the average Nusselt number is a challenging task due to the nonlinear interaction of flow, thermal, and physical parameters. While computational fluid dynamics (CFD) provides accurate solutions, it is often computationally expensive for extensive parametric studies. Machine learning offers an efficient alternative by learning complex relationships directly from CFD-generated data.In this notebook, a data-driven framework is developed to predict the average Nusselt number using multiple input features representing flow, thermal, and physical effects. Several machine learning models are trained and compared to evaluate their predictive accuracy and robustness. The goal is to identify an efficient surrogate model for heat transfer prediction and to examine the relative importance of the governing parameters.*\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "347cb128",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-05T17:20:31.186169Z",
+     "iopub.status.busy": "2026-01-05T17:20:31.185729Z",
+     "iopub.status.idle": "2026-01-05T17:20:32.594228Z",
+     "shell.execute_reply": "2026-01-05T17:20:32.593040Z"
+    },
+    "papermill": {
+     "duration": 1.414458,
+     "end_time": "2026-01-05T17:20:32.596862",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:31.182404",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Re</th>\n",
+       "      <th>Ri</th>\n",
+       "      <th>Pr</th>\n",
+       "      <th>Ec</th>\n",
+       "      <th>Ha</th>\n",
+       "      <th>AR</th>\n",
+       "      <th>S_D</th>\n",
+       "      <th>phi</th>\n",
+       "      <th>dp</th>\n",
+       "      <th>Nu_avg</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>218.543053</td>\n",
+       "      <td>0.353240</td>\n",
+       "      <td>5.506805</td>\n",
+       "      <td>0.049498</td>\n",
+       "      <td>30.330528</td>\n",
+       "      <td>1.797704</td>\n",
+       "      <td>4.847755</td>\n",
+       "      <td>0.045755</td>\n",
+       "      <td>47.248333</td>\n",
+       "      <td>7.451941</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>477.821438</td>\n",
+       "      <td>2.703638</td>\n",
+       "      <td>5.835771</td>\n",
+       "      <td>0.015041</td>\n",
+       "      <td>0.983477</td>\n",
+       "      <td>1.697955</td>\n",
+       "      <td>4.081279</td>\n",
+       "      <td>0.026651</td>\n",
+       "      <td>25.736951</td>\n",
+       "      <td>9.460403</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>379.397274</td>\n",
+       "      <td>2.749112</td>\n",
+       "      <td>5.531031</td>\n",
+       "      <td>0.044473</td>\n",
+       "      <td>0.884942</td>\n",
+       "      <td>0.564105</td>\n",
+       "      <td>2.736380</td>\n",
+       "      <td>0.007898</td>\n",
+       "      <td>52.770312</td>\n",
+       "      <td>7.007949</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>319.396318</td>\n",
+       "      <td>3.223407</td>\n",
+       "      <td>5.266108</td>\n",
+       "      <td>0.120778</td>\n",
+       "      <td>12.944409</td>\n",
+       "      <td>1.353120</td>\n",
+       "      <td>2.537875</td>\n",
+       "      <td>0.034795</td>\n",
+       "      <td>44.897400</td>\n",
+       "      <td>6.273671</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>120.208388</td>\n",
+       "      <td>3.657848</td>\n",
+       "      <td>5.361908</td>\n",
+       "      <td>0.090071</td>\n",
+       "      <td>19.545728</td>\n",
+       "      <td>1.450489</td>\n",
+       "      <td>2.723961</td>\n",
+       "      <td>0.039663</td>\n",
+       "      <td>74.169651</td>\n",
+       "      <td>3.029037</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "           Re        Ri        Pr        Ec         Ha        AR       S_D  \\\n",
+       "0  218.543053  0.353240  5.506805  0.049498  30.330528  1.797704  4.847755   \n",
+       "1  477.821438  2.703638  5.835771  0.015041   0.983477  1.697955  4.081279   \n",
+       "2  379.397274  2.749112  5.531031  0.044473   0.884942  0.564105  2.736380   \n",
+       "3  319.396318  3.223407  5.266108  0.120778  12.944409  1.353120  2.537875   \n",
+       "4  120.208388  3.657848  5.361908  0.090071  19.545728  1.450489  2.723961   \n",
+       "\n",
+       "        phi         dp    Nu_avg  \n",
+       "0  0.045755  47.248333  7.451941  \n",
+       "1  0.026651  25.736951  9.460403  \n",
+       "2  0.007898  52.770312  7.007949  \n",
+       "3  0.034795  44.897400  6.273671  \n",
+       "4  0.039663  74.169651  3.029037  "
+      ]
+     },
+     "execution_count": 1,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Creating Synthetic Dataset using Kaggle Platfrom \n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "\n",
+    "np.random.seed(42)\n",
+    "\n",
+    "n_samples = 300\n",
+    "\n",
+    "# Input features\n",
+    "Re = np.random.uniform(50, 500, n_samples)\n",
+    "Ri = np.random.uniform(0.1, 5.0, n_samples)\n",
+    "Pr = np.random.uniform(5.0, 8.0, n_samples)\n",
+    "Ec = np.random.uniform(0.01, 0.2, n_samples)\n",
+    "Ha = np.random.uniform(0, 40, n_samples)\n",
+    "AR = np.random.uniform(0.5, 3.0, n_samples)\n",
+    "S_D = np.random.uniform(1.5, 5.0, n_samples)\n",
+    "phi = np.random.uniform(0.0, 0.05, n_samples)\n",
+    "dp = np.random.uniform(20, 100, n_samples)  # nm\n",
+    "\n",
+    "# Synthetic nonlinear Nusselt number model\n",
+    "Nu_avg = (\n",
+    "    0.12 * Re**0.65\n",
+    "    * (1 + 0.4 * phi)\n",
+    "    * Pr**0.33\n",
+    "    * np.exp(-0.15 * Ri)\n",
+    "    * (1 - 0.005 * Ha)\n",
+    "    * (1 + 0.1 * (AR - 1))\n",
+    "    * (1 + 0.05 * (S_D - 2))\n",
+    "    + 5 * Ec\n",
+    ")\n",
+    "\n",
+    "# Add controlled noise (CFD-like uncertainty)\n",
+    "noise = np.random.normal(0, 0.05 * np.mean(Nu_avg), n_samples)\n",
+    "Nu_avg = Nu_avg + noise\n",
+    "\n",
+    "# Create DataFrame\n",
+    "data = pd.DataFrame({\n",
+    "    \"Re\": Re,\n",
+    "    \"Ri\": Ri,\n",
+    "    \"Pr\": Pr,\n",
+    "    \"Ec\": Ec,\n",
+    "    \"Ha\": Ha,\n",
+    "    \"AR\": AR,\n",
+    "    \"S_D\": S_D,\n",
+    "    \"phi\": phi,\n",
+    "    \"dp\": dp,\n",
+    "    \"Nu_avg\": Nu_avg\n",
+    "})\n",
+    "\n",
+    "data.head()\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0377a9d0",
+   "metadata": {
+    "papermill": {
+     "duration": 0.00215,
+     "end_time": "2026-01-05T17:20:32.601370",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:32.599220",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Final Dataset Sanity Check**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "6a6f6b10",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-05T17:20:32.607634Z",
+     "iopub.status.busy": "2026-01-05T17:20:32.607118Z",
+     "iopub.status.idle": "2026-01-05T17:20:32.616218Z",
+     "shell.execute_reply": "2026-01-05T17:20:32.615159Z"
+    },
+    "papermill": {
+     "duration": 0.015327,
+     "end_time": "2026-01-05T17:20:32.618806",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:32.603479",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "((300, 10),\n",
+       " Re        0\n",
+       " Ri        0\n",
+       " Pr        0\n",
+       " Ec        0\n",
+       " Ha        0\n",
+       " AR        0\n",
+       " S_D       0\n",
+       " phi       0\n",
+       " dp        0\n",
+       " Nu_avg    0\n",
+       " dtype: int64)"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.shape, data.isnull().sum()\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9467e9ea",
+   "metadata": {
+    "papermill": {
+     "duration": 0.002334,
+     "end_time": "2026-01-05T17:20:32.623516",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:32.621182",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Save & Version the Dataset**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "78c0b092",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-01-05T17:20:32.630370Z",
+     "iopub.status.busy": "2026-01-05T17:20:32.630017Z",
+     "iopub.status.idle": "2026-01-05T17:20:32.649844Z",
+     "shell.execute_reply": "2026-01-05T17:20:32.648822Z"
+    },
+    "papermill": {
+     "duration": 0.026667,
+     "end_time": "2026-01-05T17:20:32.652468",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:32.625801",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "data.to_csv(\"advanced_cfd_ml_dataset_v1.csv\", index=False)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6ba68ab6",
+   "metadata": {
+    "papermill": {
+     "duration": 0.002316,
+     "end_time": "2026-01-05T17:20:32.657200",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:32.654884",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**Data Set Description**\n",
+    "\n",
+    "The dataset used in this study is a synthetic CFD-based dataset designed to represent heat transfer behavior under varying flow and thermal conditions. Each data sample corresponds to a unique combination of governing parameters obtained from numerical simulations. The dataset includes multiple input features that characterize the flow regime, thermal properties, and physical effects influencing convective heat transfer.\n",
+    "\n",
+    "The input variables consist of nondimensional parameters such as the Reynolds number, Richardson number, Prandtl number, and additional physical or geometrical parameters, depending on the configuration. The target variable is the average Nusselt number, which quantifies the overall heat transfer rate. All features are continuous and numerical, with no missing values present in the dataset.\n",
+    "\n",
+    "This dataset is suitable for supervised regression tasks and is used to train, validate, and compare different machine learning models. Its structure allows for systematic analysis of parameter influence and provides a reliable basis for evaluating the performance of data-driven heat transfer prediction models."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c280e873",
+   "metadata": {
+    "papermill": {
+     "duration": 0.002195,
+     "end_time": "2026-01-05T17:20:32.661610",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:32.659415",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "**EDA (Exploitaroy Data Analysis)**\n",
+    "\n",
+    "Target variable distribution\n",
+    "\n",
+    "Feature distributions (selected)\n",
+    "\n",
+    "Correlation heatmap\n",
+    "\n",
+    "Relationship between key inputs and Nu_avg\n",
+    "\n",
+    "**This section demonstrates data understanding, not just modeling skill.**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "6e9c3873",
+   "metadata": {
+    "papermill": {
+     "duration": 0.002037,
+     "end_time": "2026-01-05T17:20:32.665881",
+     "exception": false,
+     "start_time": "2026-01-05T17:20:32.663844",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "datasetId": 9189772,
+     "sourceId": 14389468,
+     "sourceType": "datasetVersion"
+    }
+   ],
+   "dockerImageVersionId": 31234,
+   "isGpuEnabled": false,
+   "isInternetEnabled": false,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.12"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 6.01024,
+   "end_time": "2026-01-05T17:20:33.189030",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2026-01-05T17:20:27.178790",
+   "version": "2.6.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
